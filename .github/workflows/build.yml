@@ -12,7 +12,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Extract zip
-        run: unzip educational-panel-v6.zip
+        run: |
+          unzip -o educational-panel-v8.zip
+          mv v8 educational-apk
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -47,26 +49,15 @@ jobs:
             cp $folder/ic_launcher.xml $folder/ic_launcher_round.xml
           done
 
-      - name: Create gradlew manually
-        run: |
-          cd educational-apk/android
-          mkdir -p gradle/wrapper
-          cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
-          distributionBase=GRADLE_USER_HOME
-          distributionPath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip
-          zipStoreBase=GRADLE_USER_HOME
-          zipStorePath=wrapper/dists
-          EOF
-          curl -sL https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradlew -o gradlew
-          chmod +x gradlew
-          curl -sL https://github.com/gradle/gradle/raw/v8.7.0/gradle/wrapper/gradle-wrapper.jar \
-            -o gradle/wrapper/gradle-wrapper.jar
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.7
 
       - name: Build APK
         run: |
           cd educational-apk/android
-          ./gradlew assembleDebug --no-daemon
+          gradle assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
