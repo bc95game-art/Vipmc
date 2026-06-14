@@ -11,9 +11,7 @@ jobs:
 
       - name: Extract zip
         run: |
-          ls -la
           unzip "پنل-هوشمند-آموزشی.zip" 2>/dev/null || unzip educational-panel-smart.zip 2>/dev/null || unzip *.zip
-          ls -la
 
       - name: Setup Node 18
         uses: actions/setup-node@v4
@@ -40,9 +38,10 @@ jobs:
         run: |
           sdkmanager "build-tools;35.0.0" "platforms;android-36"
 
-      - name: Capacitor Sync
+      - name: Capacitor Add and Sync
         run: |
           cd app-smart
+          npx cap add android
           npx cap sync android
 
       - name: Build APK
