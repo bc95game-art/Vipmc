@@ -22,25 +22,7 @@ jobs:
         run: |
           cd app-smart
           npm install
-          npm install @capacitor/core @capacitor/cli @capacitor/android
           npm run build
-
-      - name: Create Capacitor Config
-        run: |
-          cd app-smart
-          cat > capacitor.config.json << 'CAPEOF'
-          {
-            "appId": "com.maz.educational",
-            "appName": "پنل آموزشی ماز",
-            "webDir": "dist",
-            "android": {
-              "allowMixedContent": true
-            },
-            "server": {
-              "androidScheme": "file"
-            }
-          }
-          CAPEOF
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -53,20 +35,35 @@ jobs:
 
       - name: Install Android packages
         run: |
-          sdkmanager "build-tools;35.0.0" "platforms;android-36"
+          sdkmanager "build-tools;34.0.0" "platforms;android-34"
 
-      - name: Capacitor Add and Sync
+      - name: Install Capacitor fresh
         run: |
           cd app-smart
+          npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0
+          cat > capacitor.config.json << 'EOF'
+          {
+            "appId": "com.maz.educational",
+            "appName": "MAZ Panel",
+            "webDir": "dist",
+            "server": {
+              "androidScheme": "file"
+            }
+          }
+          EOF
           npx cap add android
           npx cap sync android
 
-      - name: Fix Gradle Version
+      - name: Fix Gradle wrapper
         run: |
           cd app-smart/android
-          sed -i 's|gradle-.*-all.zip|gradle-8.2-all.zip|g' gradle/wrapper/gradle-wrapper.properties
-          sed -i 's|gradle-.*-bin.zip|gradle-8.2-bin.zip|g' gradle/wrapper/gradle-wrapper.properties
-          cat gradle/wrapper/gradle-wrapper.properties
+          cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.2-bin.zip
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
 
       - name: Build APK
         run: |
