@@ -42,10 +42,10 @@ jobs:
           }
           CAPEOF
 
-      - name: Setup Java 21
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '17'
           distribution: 'temurin'
 
       - name: Setup Android SDK
@@ -61,11 +61,18 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: Fix Gradle Version
+        run: |
+          cd app-smart/android
+          sed -i 's|gradle-.*-all.zip|gradle-8.2-all.zip|g' gradle/wrapper/gradle-wrapper.properties
+          sed -i 's|gradle-.*-bin.zip|gradle-8.2-bin.zip|g' gradle/wrapper/gradle-wrapper.properties
+          cat gradle/wrapper/gradle-wrapper.properties
+
       - name: Build APK
         run: |
           cd app-smart/android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
