@@ -15,8 +15,8 @@ jobs:
 
       - name: Extract zip
         run: |
-          unzip -o educational-panel-v9-fixed.zip
-          mv educational-panel-v9 educational-apk
+          unzip -o educational-panel-v10.zip
+          mv panel_v10 educational-apk
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -34,26 +34,24 @@ jobs:
         run: |
           cd educational-apk/android/app/src/main/res
 
-          # ساخت پوشه mipmap-v26 برای adaptive icons
           mkdir -p mipmap-v26
 
-          cat > mipmap-v26/ic_launcher.xml << 'EOF'
+          cat > mipmap-v26/ic_launcher.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
               <background android:drawable="@drawable/ic_launcher_background"/>
               <foreground android:drawable="@drawable/ic_launcher_foreground"/>
           </adaptive-icon>
-          EOF
+          XMLEOF
 
-          cat > mipmap-v26/ic_launcher_round.xml << 'EOF'
+          cat > mipmap-v26/ic_launcher_round.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
               <background android:drawable="@drawable/ic_launcher_background"/>
               <foreground android:drawable="@drawable/ic_launcher_foreground"/>
           </adaptive-icon>
-          EOF
+          XMLEOF
 
-          # حذف XML های adaptive و جایگزینی با PNG ساده با ImageMagick
           declare -A sizes=(
             ["mipmap-mdpi"]=48
             ["mipmap-hdpi"]=72
@@ -64,8 +62,8 @@ jobs:
           for folder in "${!sizes[@]}"; do
             size=${sizes[$folder]}
             rm -f $folder/ic_launcher.xml $folder/ic_launcher_round.xml
-            convert -size ${size}x${size} xc:#3F51B5 $folder/ic_launcher.png
-            convert -size ${size}x${size} xc:#3F51B5 $folder/ic_launcher_round.png
+            convert -size ${size}x${size} xc:#2f6f3e $folder/ic_launcher.png
+            convert -size ${size}x${size} xc:#2f6f3e $folder/ic_launcher_round.png
           done
 
           echo "Icons fixed successfully"
