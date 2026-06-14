@@ -26,12 +26,31 @@ jobs:
       - name: Install Android packages
         run: sdkmanager "build-tools;34.0.0" "platforms;android-34"
 
+      - name: Fix icon files
+        run: |
+          cd educational-apk/android/app/src/main/res
+
+          # ساخت پوشه mipmap-v26 برای adaptive icons
+          mkdir -p mipmap-v26
+
+          # انتقال adaptive icons به mipmap-v26
+          cp mipmap-mdpi/ic_launcher.xml mipmap-v26/ic_launcher.xml
+          cp mipmap-mdpi/ic_launcher_round.xml mipmap-v26/ic_launcher_round.xml
+
+          # جایگزینی آیکون‌های ساده در همه پوشه‌های mipmap
+          for folder in mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi; do
+            cat > $folder/ic_launcher.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+              android:src="@drawable/ic_launcher_background" />
+          EOF
+            cp $folder/ic_launcher.xml $folder/ic_launcher_round.xml
+          done
+
       - name: Create gradlew manually
         run: |
           cd educational-apk/android
-
           mkdir -p gradle/wrapper
-
           cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
           distributionBase=GRADLE_USER_HOME
           distributionPath=wrapper/dists
@@ -39,17 +58,15 @@ jobs:
           zipStoreBase=GRADLE_USER_HOME
           zipStorePath=wrapper/dists
           EOF
-
           curl -sL https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradlew -o gradlew
           chmod +x gradlew
-
           curl -sL https://github.com/gradle/gradle/raw/v8.7.0/gradle/wrapper/gradle-wrapper.jar \
             -o gradle/wrapper/gradle-wrapper.jar
 
       - name: Build APK
         run: |
           cd educational-apk/android
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
