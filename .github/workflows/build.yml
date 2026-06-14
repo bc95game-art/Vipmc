@@ -15,7 +15,7 @@ jobs:
 
       - name: Extract zip
         run: |
-          unzip -o educational-panel-v9.zip
+          unzip -o educational-panel-v9-fixed.zip
           mv educational-panel-v9 educational-apk
 
       - name: Setup Java 17
@@ -29,32 +29,6 @@ jobs:
 
       - name: Install Android packages
         run: sdkmanager "build-tools;34.0.0" "platforms;android-34"
-
-      - name: Fix launcher icons
-        run: |
-          cd educational-apk/android/app/src/main/res
-
-          # ساخت پوشه mipmap-v26 برای adaptive icons
-          mkdir -p mipmap-v26
-
-          ICON_XML='<?xml version="1.0" encoding="utf-8"?>
-          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@drawable/ic_launcher_background"/>
-              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
-          </adaptive-icon>'
-
-          echo "$ICON_XML" > mipmap-v26/ic_launcher.xml
-          echo "$ICON_XML" > mipmap-v26/ic_launcher_round.xml
-
-          # جایگزینی آیکون‌های ساده در همه پوشه‌های mipmap با bitmap معتبر
-          BITMAP_XML='<?xml version="1.0" encoding="utf-8"?>
-          <bitmap xmlns:android="http://schemas.android.com/apk/res/android"
-              android:src="@drawable/ic_launcher_background" />'
-
-          for folder in mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi; do
-            echo "$BITMAP_XML" > $folder/ic_launcher.xml
-            echo "$BITMAP_XML" > $folder/ic_launcher_round.xml
-          done
 
       - name: Make gradlew executable
         run: |
