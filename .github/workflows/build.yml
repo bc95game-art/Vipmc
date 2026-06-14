@@ -10,7 +10,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Extract zip
-        run: unzip "پنل-هوشمند-آموزشی.zip" || unzip educational-panel-smart.zip
+        run: |
+          ls -la
+          unzip "پنل-هوشمند-آموزشی.zip" 2>/dev/null || unzip educational-panel-smart.zip 2>/dev/null || unzip *.zip
+          ls -la
 
       - name: Setup Node 18
         uses: actions/setup-node@v4
@@ -21,6 +24,7 @@ jobs:
         run: |
           cd app-smart
           npm install
+          npm install @capacitor/core @capacitor/cli @capacitor/android
           npm run build
 
       - name: Setup Java 17
@@ -36,10 +40,10 @@ jobs:
         run: |
           sdkmanager "build-tools;35.0.0" "platforms;android-36"
 
-      - name: Capacitor Copy
+      - name: Capacitor Sync
         run: |
           cd app-smart
-          npx cap copy android
+          npx cap sync android
 
       - name: Build APK
         run: |
