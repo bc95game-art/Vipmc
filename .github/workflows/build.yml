@@ -11,19 +11,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Extract zip
-        run: |
-          unzip educational-panel-v6.zip
-
-      - name: Setup Node 18
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install and Build
-        run: |
-          cd educational-apk/app-web     # ← اینجا تغییر کرد
-          npm install
-          npm run build
+        run: unzip educational-panel-v6.zip
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -35,12 +23,18 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install Android packages
+        run: sdkmanager "build-tools;34.0.0" "platforms;android-34"
+
+      - name: Generate Gradle Wrapper
         run: |
-          sdkmanager "build-tools;34.0.0" "platforms;android-34"
+          cd educational-apk/android
+          gradle wrapper --gradle-version=8.7
+        env:
+          GRADLE_USER_HOME: /root/.gradle
 
       - name: Build APK
         run: |
-          cd educational-apk/android     # ← اینجا هم تغییر کرد
+          cd educational-apk/android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
