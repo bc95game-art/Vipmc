@@ -6,6 +6,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,18 +26,30 @@ jobs:
       - name: Install Android packages
         run: sdkmanager "build-tools;34.0.0" "platforms;android-34"
 
-      - name: Generate Gradle Wrapper
+      - name: Create gradlew manually
         run: |
           cd educational-apk/android
-          gradle wrapper --gradle-version=8.7
-        env:
-          GRADLE_USER_HOME: /root/.gradle
+
+          mkdir -p gradle/wrapper
+
+          cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
+
+          curl -sL https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradlew -o gradlew
+          chmod +x gradlew
+
+          curl -sL https://github.com/gradle/gradle/raw/v8.7.0/gradle/wrapper/gradle-wrapper.jar \
+            -o gradle/wrapper/gradle-wrapper.jar
 
       - name: Build APK
         run: |
           cd educational-apk/android
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
