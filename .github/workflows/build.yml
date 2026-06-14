@@ -53,30 +53,22 @@ jobs:
           </adaptive-icon>
           EOF
 
-          # جایگزینی آیکون‌های XML در پوشه‌های غیر v26 با PNG ساده
-          python3 - << 'PYEOF'
-          from PIL import Image, ImageDraw
-          import os
+          # حذف XML های adaptive و جایگزینی با PNG ساده با ImageMagick
+          declare -A sizes=(
+            ["mipmap-mdpi"]=48
+            ["mipmap-hdpi"]=72
+            ["mipmap-xhdpi"]=96
+            ["mipmap-xxhdpi"]=144
+          )
 
-          sizes = {
-              'mipmap-mdpi': 48,
-              'mipmap-hdpi': 72,
-              'mipmap-xhdpi': 96,
-              'mipmap-xxhdpi': 144,
-          }
+          for folder in "${!sizes[@]}"; do
+            size=${sizes[$folder]}
+            rm -f $folder/ic_launcher.xml $folder/ic_launcher_round.xml
+            convert -size ${size}x${size} xc:#3F51B5 $folder/ic_launcher.png
+            convert -size ${size}x${size} xc:#3F51B5 $folder/ic_launcher_round.png
+          done
 
-          for folder, size in sizes.items():
-              os.makedirs(folder, exist_ok=True)
-              for name in ['ic_launcher.png', 'ic_launcher_round.png']:
-                  img = Image.new('RGBA', (size, size), (63, 81, 181, 255))
-                  # حذف فایل XML قبلی
-                  xml_name = name.replace('.png', '.xml')
-                  xml_path = os.path.join(folder, xml_name)
-                  if os.path.exists(xml_path):
-                      os.remove(xml_path)
-                  img.save(os.path.join(folder, name))
-          print("Icons created successfully")
-          PYEOF
+          echo "Icons fixed successfully"
 
       - name: Make gradlew executable
         run: |
