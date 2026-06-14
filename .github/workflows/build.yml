@@ -30,43 +30,146 @@ jobs:
       - name: Install Android packages
         run: sdkmanager "build-tools;34.0.0" "platforms;android-34"
 
-      - name: Fix launcher icons
+      - name: Create res folders and icons
         run: |
-          cd educational-apk/android/app/src/main/res
+          BASE=educational-apk/android/app/src/main/res
 
-          mkdir -p mipmap-v26
+          # ساخت همه پوشه‌های لازم
+          mkdir -p $BASE/mipmap-mdpi
+          mkdir -p $BASE/mipmap-hdpi
+          mkdir -p $BASE/mipmap-xhdpi
+          mkdir -p $BASE/mipmap-xxhdpi
+          mkdir -p $BASE/mipmap-xxxhdpi
+          mkdir -p $BASE/drawable
+          mkdir -p $BASE/layout
+          mkdir -p $BASE/values
 
-          cat > mipmap-v26/ic_launcher.xml << 'XMLEOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@drawable/ic_launcher_background"/>
-              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
-          </adaptive-icon>
-          XMLEOF
-
-          cat > mipmap-v26/ic_launcher_round.xml << 'XMLEOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@drawable/ic_launcher_background"/>
-              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
-          </adaptive-icon>
-          XMLEOF
-
+          # ساخت آیکون‌ها با ImageMagick (رنگ سبز پنل)
           declare -A sizes=(
             ["mipmap-mdpi"]=48
             ["mipmap-hdpi"]=72
             ["mipmap-xhdpi"]=96
             ["mipmap-xxhdpi"]=144
+            ["mipmap-xxxhdpi"]=192
           )
 
           for folder in "${!sizes[@]}"; do
             size=${sizes[$folder]}
-            rm -f $folder/ic_launcher.xml $folder/ic_launcher_round.xml
-            convert -size ${size}x${size} xc:#2f6f3e $folder/ic_launcher.png
-            convert -size ${size}x${size} xc:#2f6f3e $folder/ic_launcher_round.png
+            convert -size ${size}x${size} xc:#2f6f3e \
+              -fill white -gravity center \
+              -font DejaVu-Sans-Bold -pointsize $((size/3)) \
+              -annotate 0 "MAZ" \
+              $BASE/$folder/ic_launcher.png
+            cp $BASE/$folder/ic_launcher.png $BASE/$folder/ic_launcher_round.png
           done
 
-          echo "Icons fixed successfully"
+          # drawable background برای adaptive icon
+          cat > $BASE/drawable/ic_launcher_background.xml << 'XMLEOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="#2f6f3e"/>
+          </shape>
+          XMLEOF
+
+          # strings.xml
+          cat > $BASE/values/strings.xml << 'XMLEOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <string name="app_name">پنل آموزشی ماز</string>
+          </resources>
+          XMLEOF
+
+          # colors.xml
+          cat > $BASE/values/colors.xml << 'XMLEOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="colorPrimary">#2f6f3e</color>
+              <color name="colorPrimaryDark">#1e4a29</color>
+              <color name="colorAccent">#c9a227</color>
+          </resources>
+          XMLEOF
+
+          # styles.xml
+          cat > $BASE/values/styles.xml << 'XMLEOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+                  <item name="colorPrimary">@color/colorPrimary</item>
+                  <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+                  <item name="colorAccent">@color/colorAccent</item>
+              </style>
+          </resources>
+          XMLEOF
+
+          echo "Res folders and icons created successfully"
+          ls -la $BASE/
+
+      - name: Create AndroidManifest
+        run: |
+          MANIFEST=educational-apk/android/app/src/main/AndroidManifest.xml
+          mkdir -p educational-apk/android/app/src/main
+
+          cat > $MANIFEST << 'XMLEOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+              <uses-permission android:name="android.permission.INTERNET"/>
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+
+              <application
+                  android:allowBackup="true"
+                  android:icon="@mipmap/ic_launcher"
+                  android:roundIcon="@mipmap/ic_launcher_round"
+                  android:label="@string/app_name"
+                  android:theme="@style/AppTheme"
+                  android:usesCleartextTraffic="true">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:configChanges="orientation|screenSize|keyboardHidden"
+                      android:screenOrientation="portrait">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+
+              </application>
+
+          </manifest>
+          XMLEOF
+
+          echo "AndroidManifest created"
+
+      - name: Create settings.gradle
+        run: |
+          cat > educational-apk/android/settings.gradle << 'SGEOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "MazPanel"
+          include ':app'
+          SGEOF
+
+          echo "settings.gradle created"
+
+      - name: Update version in build.gradle
+        run: |
+          sed -i 's/versionCode 7/versionCode 10/' educational-apk/android/app/build.gradle
+          sed -i 's/versionName "7.0"/versionName "10.0"/' educational-apk/android/app/build.gradle
+          echo "build.gradle updated"
 
       - name: Make gradlew executable
         run: |
