@@ -30,6 +30,54 @@ jobs:
       - name: Install Android packages
         run: sdkmanager "build-tools;34.0.0" "platforms;android-34"
 
+      - name: Fix launcher icons
+        run: |
+          cd educational-apk/android/app/src/main/res
+
+          # ساخت پوشه mipmap-v26 برای adaptive icons
+          mkdir -p mipmap-v26
+
+          cat > mipmap-v26/ic_launcher.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@drawable/ic_launcher_background"/>
+              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+          </adaptive-icon>
+          EOF
+
+          cat > mipmap-v26/ic_launcher_round.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@drawable/ic_launcher_background"/>
+              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+          </adaptive-icon>
+          EOF
+
+          # جایگزینی آیکون‌های XML در پوشه‌های غیر v26 با PNG ساده
+          python3 - << 'PYEOF'
+          from PIL import Image, ImageDraw
+          import os
+
+          sizes = {
+              'mipmap-mdpi': 48,
+              'mipmap-hdpi': 72,
+              'mipmap-xhdpi': 96,
+              'mipmap-xxhdpi': 144,
+          }
+
+          for folder, size in sizes.items():
+              os.makedirs(folder, exist_ok=True)
+              for name in ['ic_launcher.png', 'ic_launcher_round.png']:
+                  img = Image.new('RGBA', (size, size), (63, 81, 181, 255))
+                  # حذف فایل XML قبلی
+                  xml_name = name.replace('.png', '.xml')
+                  xml_path = os.path.join(folder, xml_name)
+                  if os.path.exists(xml_path):
+                      os.remove(xml_path)
+                  img.save(os.path.join(folder, name))
+          print("Icons created successfully")
+          PYEOF
+
       - name: Make gradlew executable
         run: |
           cd educational-apk/android
