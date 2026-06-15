@@ -34,7 +34,6 @@ jobs:
         run: |
           BASE=educational-apk/android/app/src/main/res
 
-          # ساخت همه پوشه‌های لازم
           mkdir -p $BASE/mipmap-mdpi
           mkdir -p $BASE/mipmap-hdpi
           mkdir -p $BASE/mipmap-xhdpi
@@ -44,7 +43,6 @@ jobs:
           mkdir -p $BASE/layout
           mkdir -p $BASE/values
 
-          # ساخت آیکون‌ها با ImageMagick (رنگ سبز پنل)
           declare -A sizes=(
             ["mipmap-mdpi"]=48
             ["mipmap-hdpi"]=72
@@ -63,7 +61,6 @@ jobs:
             cp $BASE/$folder/ic_launcher.png $BASE/$folder/ic_launcher_round.png
           done
 
-          # drawable background برای adaptive icon
           cat > $BASE/drawable/ic_launcher_background.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
@@ -71,7 +68,6 @@ jobs:
           </shape>
           XMLEOF
 
-          # strings.xml
           cat > $BASE/values/strings.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
@@ -79,7 +75,6 @@ jobs:
           </resources>
           XMLEOF
 
-          # colors.xml
           cat > $BASE/values/colors.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
@@ -89,7 +84,6 @@ jobs:
           </resources>
           XMLEOF
 
-          # styles.xml
           cat > $BASE/values/styles.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
@@ -101,21 +95,15 @@ jobs:
           </resources>
           XMLEOF
 
-          echo "Res folders and icons created successfully"
-          ls -la $BASE/
+          echo "Res created OK"
 
       - name: Create AndroidManifest
         run: |
-          MANIFEST=educational-apk/android/app/src/main/AndroidManifest.xml
-          mkdir -p educational-apk/android/app/src/main
-
-          cat > $MANIFEST << 'XMLEOF'
+          cat > educational-apk/android/app/src/main/AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-
               <application
                   android:allowBackup="true"
                   android:icon="@mipmap/ic_launcher"
@@ -123,7 +111,6 @@ jobs:
                   android:label="@string/app_name"
                   android:theme="@style/AppTheme"
                   android:usesCleartextTraffic="true">
-
                   <activity
                       android:name=".MainActivity"
                       android:exported="true"
@@ -134,13 +121,10 @@ jobs:
                           <category android:name="android.intent.category.LAUNCHER"/>
                       </intent-filter>
                   </activity>
-
               </application>
-
           </manifest>
           XMLEOF
-
-          echo "AndroidManifest created"
+          echo "Manifest OK"
 
       - name: Create settings.gradle
         run: |
@@ -162,14 +146,67 @@ jobs:
           rootProject.name = "MazPanel"
           include ':app'
           SGEOF
+          echo "settings.gradle OK"
 
-          echo "settings.gradle created"
-
-      - name: Update version in build.gradle
+      - name: Create gradle.properties
         run: |
-          sed -i 's/versionCode 7/versionCode 10/' educational-apk/android/app/build.gradle
-          sed -i 's/versionName "7.0"/versionName "10.0"/' educational-apk/android/app/build.gradle
-          echo "build.gradle updated"
+          cat > educational-apk/android/gradle.properties << 'GPEOF'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          org.gradle.daemon=false
+          GPEOF
+          echo "gradle.properties OK"
+
+      - name: Fix build.gradle dependencies
+        run: |
+          cat > educational-apk/android/app/build.gradle << 'BGEOF'
+          plugins {
+              id 'com.android.application'
+          }
+
+          android {
+              namespace 'ir.maz.educational'
+              compileSdk 34
+
+              defaultConfig {
+                  applicationId "ir.maz.educational"
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 10
+                  versionName "10.0"
+              }
+
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                  }
+                  debug {
+                      debuggable true
+                  }
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+
+              aaptOptions {
+                  noCompress "mp4", "pdf", "webm", "mkv"
+              }
+          }
+
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.7.0'
+              implementation 'com.google.android.material:material:1.12.0'
+              implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+              implementation 'androidx.media3:media3-exoplayer:1.4.1'
+              implementation 'androidx.media3:media3-ui:1.4.1'
+              implementation 'androidx.media3:media3-common:1.4.1'
+          }
+          BGEOF
+          echo "build.gradle OK"
 
       - name: Make gradlew executable
         run: |
